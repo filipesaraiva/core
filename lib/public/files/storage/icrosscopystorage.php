@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (c) 2012 Robin Appelman <icewind@owncloud.com>
+ * Copyright (c) 2015 Robin Appelman <icewind@owncloud.com>
  * This file is licensed under the Affero General Public License version 3 or
  * later.
  * See the COPYING-README file.
@@ -18,7 +18,7 @@ interface ICrossCopyStorage {
 	 * @param string $targetInternalPath
 	 * @return bool true on success, false if the cross storage copy is not possible
 	 */
-	public function crossCopy($sourceStorage, $sourceInternalPath, $targetInternalPath);
+	public function crossCopy(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath);
 
 	/**
 	 * @param \OCP\Files\Storage $sourceStorage
@@ -26,5 +26,5 @@ interface ICrossCopyStorage {
 	 * @param string $targetInternalPath
 	 * @return bool true on success, false if the cross storage copy is not possible
 	 */
-	public function crossMove($sourceStorage, $sourceInternalPath, $targetInternalPath);
+	public function crossMove(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath);
 }

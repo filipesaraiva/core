@@ -322,7 +322,7 @@ if (\OC_Util::runningOnWindows()) {
 		 * @param string $targetInternalPath
 		 * @return bool
 		 */
-		public function crossCopy($sourceStorage, $sourceInternalPath, $targetInternalPath) {
+		public function crossCopy(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath) {
 			if($sourceStorage->instanceOfStorage('\OC\Files\Storage\Local')){
 				/**
 				 * @var \OC\Files\Storage\Local $sourceStorage
@@ -340,7 +340,7 @@ if (\OC_Util::runningOnWindows()) {
 		 * @param string $targetInternalPath
 		 * @return bool
 		 */
-		public function crossMove($sourceStorage, $sourceInternalPath, $targetInternalPath) {
+		public function crossMove(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath) {
 			if ($sourceStorage->instanceOfStorage('\OC\Files\Storage\Local')) {
 				/**
 				 * @var \OC\Files\Storage\Local $sourceStorage
