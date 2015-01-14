@@ -486,7 +486,7 @@ class View {
 				$mount1 = $this->getMount($path1);
 				$mount2 = $this->getMount($path2);
 				$storage1 = $mount1->getStorage();
-				$storage2 = $mount1->getStorage();
+				$storage2 = $mount2->getStorage();
 				$internalPath1 = $mount1->getInternalPath($absolutePath1);
 				$internalPath2 = $mount2->getInternalPath($absolutePath2);
 
@@ -498,38 +498,45 @@ class View {
 						$sourceMountPoint = $mount1->getMountPoint();
 						$result = $mount1->moveMount($absolutePath2);
 						Filesystem::getMountManager()->moveMount($sourceMountPoint, $mount1->getMountPoint());
-						\OC_FileProxy::runPostProxies('rename', $absolutePath1, $absolutePath2);
 					} else {
 						$result = false;
 					}
 				} elseif ($storage1 == $storage2) {
 					if ($storage1) {
 						$result = $storage1->rename($internalPath1, $internalPath2);
-						\OC_FileProxy::runPostProxies('rename', $absolutePath1, $absolutePath2);
 					} else {
 						$result = false;
 					}
 				} else {
-					if ($this->is_dir($path1)) {
-						$result = $this->copy($path1, $path2);
-						if ($result === true) {
-							$result = $storage1->rmdir($internalPath1);
-						}
+					/**
+					 * @var \OCP\Files\Storage\ICrossCopyStorage | \OCP\Files\Storage $storage2
+					 */
+					if ($storage2->instanceOfStorage('\OCP\Files\Storage\ICrossCopyStorage') and
+						$storage2->crossMove($storage1, $internalPath1, $internalPath2)) {
+						$result = true;
 					} else {
-						$source = $this->fopen($path1 . $postFix1, 'r');
-						$target = $this->fopen($path2 . $postFix2, 'w');
-						list($count, $result) = \OC_Helper::streamCopy($source, $target);
+						if ($this->is_dir($path1)) {
+							$result = $this->copy($path1, $path2);
+							if ($result === true) {
+								$result = $storage1->rmdir($internalPath1);
+							}
+						} else {
+							$source = $this->fopen($path1 . $postFix1, 'r');
+							$target = $this->fopen($path2 . $postFix2, 'w');
+							list($count, $result) = \OC_Helper::streamCopy($source, $target);
 
-						// close open handle - especially $source is necessary because unlink below will
-						// throw an exception on windows because the file is locked
-						fclose($source);
-						fclose($target);
+							// close open handle - especially $source is necessary because unlink below will
+							// throw an exception on windows because the file is locked
+							fclose($source);
+							fclose($target);
 
-						if ($result !== false) {
-							$storage1->unlink($internalPath1);
+							if ($result !== false) {
+								$storage1->unlink($internalPath1);
+							}
 						}
 					}
 				}
+				\OC_FileProxy::runPostProxies('rename', $absolutePath1, $absolutePath2);
 				if ((Cache\Scanner::isPartialFile($path1) && !Cache\Scanner::isPartialFile($path2)) && $result !== false) {
 					// if it was a rename from a part file to a regular file it was a write and not a rename operation
 					$this->updater->update($path2);
@@ -588,32 +595,43 @@ class View {
 				$this->emit_file_hooks_pre($exists, $path2, $run);
 			}
 			if ($run) {
-				$mp1 = $this->getMountPoint($path1 . $postFix1);
-				$mp2 = $this->getMountPoint($path2 . $postFix2);
-				if ($mp1 == $mp2) {
-					list($storage, $internalPath1) = Filesystem::resolvePath($absolutePath1 . $postFix1);
-					list(, $internalPath2) = Filesystem::resolvePath($absolutePath2 . $postFix2);
-					if ($storage) {
-						$result = $storage->copy($internalPath1, $internalPath2);
+				$mount1 = $this->getMount($path1);
+				$mount2 = $this->getMount($path2);
+				$storage1 = $mount1->getStorage();
+				$internalPath1 = $mount1->getInternalPath($absolutePath1);
+				$storage2 = $mount2->getStorage();
+				$internalPath2 = $mount2->getInternalPath($absolutePath2);
+				if ($mount1->getMountPoint() == $mount2->getMountPoint()) {
+					if ($storage1) {
+						$result = $storage1->copy($internalPath1, $internalPath2);
 					} else {
 						$result = false;
 					}
 				} else {
-					if ($this->is_dir($path1) && ($dh = $this->opendir($path1))) {
-						$result = $this->mkdir($path2);
-						if (is_resource($dh)) {
-							while (($file = readdir($dh)) !== false) {
-								if (!Filesystem::isIgnoredDir($file)) {
-									$result = $this->copy($path1 . '/' . $file, $path2 . '/' . $file);
+					/**
+					 * @var \OCP\Files\Storage\ICrossCopyStorage | \OCP\Files\Storage $storage2
+					 */
+					if ($storage2->instanceOfStorage('\OCP\Files\Storage\ICrossCopyStorage') and
+						$storage2->crossCopy($storage1, $internalPath1, $internalPath2)
+					) {
+						$result = true;
+					} else {
+						if ($this->is_dir($path1) && ($dh = $this->opendir($path1))) {
+							$result = $this->mkdir($path2);
+							if (is_resource($dh)) {
+								while (($file = readdir($dh)) !== false) {
+									if (!Filesystem::isIgnoredDir($file)) {
+										$result = $this->copy($path1 . '/' . $file, $path2 . '/' . $file);
+									}
 								}
 							}
+						} else {
+							$source = $this->fopen($path1 . $postFix1, 'r');
+							$target = $this->fopen($path2 . $postFix2, 'w');
+							list($count, $result) = \OC_Helper::streamCopy($source, $target);
+							fclose($source);
+							fclose($target);
 						}
-					} else {
-						$source = $this->fopen($path1 . $postFix1, 'r');
-						$target = $this->fopen($path2 . $postFix2, 'w');
-						list($count, $result) = \OC_Helper::streamCopy($source, $target);
-						fclose($source);
-						fclose($target);
 					}
 				}
 				$this->updater->update($path2);
