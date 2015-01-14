@@ -8,6 +8,8 @@
 
 namespace OC\Files\Storage;
 
+use OCP\Files\Storage\ICrossCopyStorage;
+
 if (\OC_Util::runningOnWindows()) {
 	class Local extends MappedLocal {
 
@@ -17,7 +19,7 @@ if (\OC_Util::runningOnWindows()) {
 	/**
 	 * for local filestore, we only have to map the paths
 	 */
-	class Local extends \OC\Files\Storage\Common {
+	class Local extends \OC\Files\Storage\Common implements ICrossCopyStorage {
 		protected $datadir;
 
 		public function __construct($arguments) {
@@ -311,6 +313,42 @@ if (\OC_Util::runningOnWindows()) {
 				);
 			} else {
 				return parent::getETag($path);
+			}
+		}
+
+		/**
+		 * @param \OCP\Files\Storage $sourceStorage
+		 * @param string $sourceInternalPath
+		 * @param string $targetInternalPath
+		 * @return bool
+		 */
+		public function crossCopy($sourceStorage, $sourceInternalPath, $targetInternalPath) {
+			if($sourceStorage->instanceOfStorage('\OC\Files\Storage\Local')){
+				/**
+				 * @var \OC\Files\Storage\Local $sourceStorage
+				 */
+				$rootStorage = new Local(['datadir' => '/']);
+				return $rootStorage->copy($sourceStorage->getSourcePath($sourceInternalPath), $this->getSourcePath($targetInternalPath));
+			} else {
+				return false;
+			}
+		}
+
+		/**
+		 * @param \OCP\Files\Storage $sourceStorage
+		 * @param string $sourceInternalPath
+		 * @param string $targetInternalPath
+		 * @return bool
+		 */
+		public function crossMove($sourceStorage, $sourceInternalPath, $targetInternalPath) {
+			if ($sourceStorage->instanceOfStorage('\OC\Files\Storage\Local')) {
+				/**
+				 * @var \OC\Files\Storage\Local $sourceStorage
+				 */
+				$rootStorage = new Local(['datadir' => '/']);
+				return $rootStorage->rename($sourceStorage->getSourcePath($sourceInternalPath), $this->getSourcePath($targetInternalPath));
+			} else {
+				return false;
 			}
 		}
 	}
