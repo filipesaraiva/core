@@ -8,8 +8,6 @@
 
 namespace OC\Files\Storage;
 
-use OCP\Files\Storage\ICrossCopyStorage;
-
 if (\OC_Util::runningOnWindows()) {
 	class Local extends MappedLocal {
 
@@ -19,7 +17,7 @@ if (\OC_Util::runningOnWindows()) {
 	/**
 	 * for local filestore, we only have to map the paths
 	 */
-	class Local extends \OC\Files\Storage\Common implements ICrossCopyStorage {
+	class Local extends \OC\Files\Storage\Common {
 		protected $datadir;
 
 		public function __construct($arguments) {
@@ -322,7 +320,7 @@ if (\OC_Util::runningOnWindows()) {
 		 * @param string $targetInternalPath
 		 * @return bool
 		 */
-		public function crossCopy(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath) {
+		public function copyFromStorage(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath) {
 			if($sourceStorage->instanceOfStorage('\OC\Files\Storage\Local')){
 				/**
 				 * @var \OC\Files\Storage\Local $sourceStorage
@@ -330,7 +328,7 @@ if (\OC_Util::runningOnWindows()) {
 				$rootStorage = new Local(['datadir' => '/']);
 				return $rootStorage->copy($sourceStorage->getSourcePath($sourceInternalPath), $this->getSourcePath($targetInternalPath));
 			} else {
-				return false;
+				return parent::copyFromStorage($sourceStorage, $sourceInternalPath, $targetInternalPath);
 			}
 		}
 
@@ -340,7 +338,7 @@ if (\OC_Util::runningOnWindows()) {
 		 * @param string $targetInternalPath
 		 * @return bool
 		 */
-		public function crossMove(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath) {
+		public function moveFromStorage(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath) {
 			if ($sourceStorage->instanceOfStorage('\OC\Files\Storage\Local')) {
 				/**
 				 * @var \OC\Files\Storage\Local $sourceStorage
@@ -348,7 +346,7 @@ if (\OC_Util::runningOnWindows()) {
 				$rootStorage = new Local(['datadir' => '/']);
 				return $rootStorage->rename($sourceStorage->getSourcePath($sourceInternalPath), $this->getSourcePath($targetInternalPath));
 			} else {
-				return false;
+				return parent::moveFromStorage($sourceStorage, $sourceInternalPath, $targetInternalPath);
 			}
 		}
 	}

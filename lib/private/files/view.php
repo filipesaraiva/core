@@ -508,33 +508,7 @@ class View {
 						$result = false;
 					}
 				} else {
-					/**
-					 * @var \OCP\Files\Storage\ICrossCopyStorage | \OCP\Files\Storage $storage2
-					 */
-					if ($storage2->instanceOfStorage('\OCP\Files\Storage\ICrossCopyStorage') and
-						$storage2->crossMove($storage1, $internalPath1, $internalPath2)) {
-						$result = true;
-					} else {
-						if ($this->is_dir($path1)) {
-							$result = $this->copy($path1, $path2);
-							if ($result === true) {
-								$result = $storage1->rmdir($internalPath1);
-							}
-						} else {
-							$source = $this->fopen($path1 . $postFix1, 'r');
-							$target = $this->fopen($path2 . $postFix2, 'w');
-							list($count, $result) = \OC_Helper::streamCopy($source, $target);
-
-							// close open handle - especially $source is necessary because unlink below will
-							// throw an exception on windows because the file is locked
-							fclose($source);
-							fclose($target);
-
-							if ($result !== false) {
-								$storage1->unlink($internalPath1);
-							}
-						}
-					}
+					return $storage2->moveFromStorage($storage1, $internalPath1, $internalPath2);
 				}
 				\OC_FileProxy::runPostProxies('rename', $absolutePath1, $absolutePath2);
 				if ((Cache\Scanner::isPartialFile($path1) && !Cache\Scanner::isPartialFile($path2)) && $result !== false) {
@@ -608,31 +582,7 @@ class View {
 						$result = false;
 					}
 				} else {
-					/**
-					 * @var \OCP\Files\Storage\ICrossCopyStorage | \OCP\Files\Storage $storage2
-					 */
-					if ($storage2->instanceOfStorage('\OCP\Files\Storage\ICrossCopyStorage') and
-						$storage2->crossCopy($storage1, $internalPath1, $internalPath2)
-					) {
-						$result = true;
-					} else {
-						if ($this->is_dir($path1) && ($dh = $this->opendir($path1))) {
-							$result = $this->mkdir($path2);
-							if (is_resource($dh)) {
-								while (($file = readdir($dh)) !== false) {
-									if (!Filesystem::isIgnoredDir($file)) {
-										$result = $this->copy($path1 . '/' . $file, $path2 . '/' . $file);
-									}
-								}
-							}
-						} else {
-							$source = $this->fopen($path1 . $postFix1, 'r');
-							$target = $this->fopen($path2 . $postFix2, 'w');
-							list($count, $result) = \OC_Helper::streamCopy($source, $target);
-							fclose($source);
-							fclose($target);
-						}
-					}
+					return $storage2->copyFromStorage($storage1, $internalPath1, $internalPath2);
 				}
 				$this->updater->update($path2);
 				if ($this->shouldEmitHooks() && $result !== false) {

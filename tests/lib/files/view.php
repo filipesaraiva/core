@@ -8,6 +8,7 @@
 namespace Test\Files;
 
 use OC\Files\Cache\Watcher;
+use OC\Files\Storage\Common;
 use OC\Files\Storage\Temporary;
 
 class TemporaryNoTouch extends \OC\Files\Storage\Temporary {
@@ -17,12 +18,12 @@ class TemporaryNoTouch extends \OC\Files\Storage\Temporary {
 }
 
 class TemporaryNoCross extends \OC\Files\Storage\Temporary {
-	public function crossCopy(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath) {
-		return false;
+	public function copyFromStorage(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath) {
+		return Common::copyFromStorage($sourceStorage, $sourceInternalPath, $targetInternalPath);
 	}
 
-	public function crossMove(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath) {
-		return false;
+	public function moveFromStorage(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath) {
+		return Common::moveFromStorage($sourceStorage, $sourceInternalPath, $targetInternalPath);
 	}
 }
 

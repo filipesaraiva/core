@@ -451,4 +451,45 @@ abstract class Common implements \OC\Files\Storage\Storage {
 		return [];
 	}
 
+	/**
+	 * @param \OCP\Files\Storage $sourceStorage
+	 * @param string $sourceInternalPath
+	 * @param string $targetInternalPath
+	 * @return bool true on success, false if the cross storage copy is not possible
+	 */
+	public function copyFromStorage(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath) {
+		if ($sourceStorage->is_dir($sourceInternalPath)) {
+			$dh = $sourceStorage->opendir($sourceInternalPath);
+			$result = $this->mkdir($targetInternalPath);
+			if (is_resource($dh)) {
+				while (($file = readdir($dh)) !== false) {
+					if (!Filesystem::isIgnoredDir($file)) {
+						$result = $this->copyFromStorage($sourceStorage, $sourceInternalPath . '/' . $file, $targetInternalPath . '/' . $file);
+					}
+				}
+			}
+		} else {
+			$source = $sourceStorage->fopen($sourceInternalPath, 'r');
+			$target = $this->fopen($targetInternalPath, 'w');
+			list(, $result) = \OC_Helper::streamCopy($source, $target);
+			fclose($source);
+			fclose($target);
+		}
+		return $result;
+	}
+
+	/**
+	 * @param \OCP\Files\Storage $sourceStorage
+	 * @param string $sourceInternalPath
+	 * @param string $targetInternalPath
+	 * @return bool true on success, false if the cross storage copy is not possible
+	 */
+	public function moveFromStorage(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath) {
+		$this->copyFromStorage($sourceStorage, $sourceInternalPath, $targetInternalPath);
+		if ($sourceStorage->is_dir($sourceInternalPath)) {
+			$sourceStorage->rmdir($sourceInternalPath);
+		} else {
+			$sourceStorage->unlink($sourceInternalPath);
+		}
+	}
 }
