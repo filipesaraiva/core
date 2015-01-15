@@ -455,7 +455,7 @@ abstract class Common implements \OC\Files\Storage\Storage {
 	 * @param \OCP\Files\Storage $sourceStorage
 	 * @param string $sourceInternalPath
 	 * @param string $targetInternalPath
-	 * @return bool true on success, false if the cross storage copy is not possible
+	 * @return bool
 	 */
 	public function copyFromStorage(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath) {
 		if ($sourceStorage->is_dir($sourceInternalPath)) {
@@ -482,14 +482,17 @@ abstract class Common implements \OC\Files\Storage\Storage {
 	 * @param \OCP\Files\Storage $sourceStorage
 	 * @param string $sourceInternalPath
 	 * @param string $targetInternalPath
-	 * @return bool true on success, false if the cross storage copy is not possible
+	 * @return bool
 	 */
 	public function moveFromStorage(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath) {
-		$this->copyFromStorage($sourceStorage, $sourceInternalPath, $targetInternalPath);
-		if ($sourceStorage->is_dir($sourceInternalPath)) {
-			$sourceStorage->rmdir($sourceInternalPath);
-		} else {
-			$sourceStorage->unlink($sourceInternalPath);
+		$result = $this->copyFromStorage($sourceStorage, $sourceInternalPath, $targetInternalPath);
+		if($result) {
+			if ($sourceStorage->is_dir($sourceInternalPath)) {
+				$sourceStorage->rmdir($sourceInternalPath);
+			} else {
+				$sourceStorage->unlink($sourceInternalPath);
+			}
 		}
+		return $result;
 	}
 }

@@ -350,7 +350,7 @@ interface Storage {
 	 * @param \OCP\Files\Storage $sourceStorage
 	 * @param string $sourceInternalPath
 	 * @param string $targetInternalPath
-	 * @return bool true on success, false if the cross storage copy is not possible
+	 * @return bool
 	 */
 	public function copyFromStorage(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath);
 
@@ -358,7 +358,7 @@ interface Storage {
 	 * @param \OCP\Files\Storage $sourceStorage
 	 * @param string $sourceInternalPath
 	 * @param string $targetInternalPath
-	 * @return bool true on success, false if the cross storage copy is not possible
+	 * @return bool
 	 */
 	public function moveFromStorage(\OCP\Files\Storage $sourceStorage, $sourceInternalPath, $targetInternalPath);
 }
